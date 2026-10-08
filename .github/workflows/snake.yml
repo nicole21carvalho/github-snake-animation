@@ -1,0 +1,40 @@
+name: Gerar animação da cobrinha
+
+on:
+  schedule:
+    # Minuto 0, a cada 12 horas (00:00 e 12:00 UTC)
+    - cron: "0 */12 * * *"
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+# Evita duas execuções publicando na branch output ao mesmo tempo
+concurrency:
+  group: snake
+  cancel-in-progress: true
+
+jobs:
+  gerar:
+    name: Gerar e publicar o SVG
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+
+    steps:
+      - name: Gerar snake.svg (tema claro) e snake-dark.svg (tema escuro)
+        uses: Platane/snk/svg-only@v3
+        with:
+          github_user_name: ${{ github.repository_owner }}
+          outputs: |
+            dist/snake.svg
+            dist/snake-dark.svg?palette=github-dark
+
+      - name: Publicar os SVGs na branch output
+        uses: crazy-max/ghaction-github-pages@v4
+        with:
+          target_branch: output
+          build_dir: dist
+          commit_message: "chore: atualiza a animação da cobrinha"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
